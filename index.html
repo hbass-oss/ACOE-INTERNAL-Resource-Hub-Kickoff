@@ -1111,16 +1111,16 @@ function closeAdminTab() {
 
 function renderAdminEditor() {
   const contacts = loadContacts();
-  const filled = RESOURCES.filter(r => {
+  const filledCount = RESOURCES.filter(r => {
     const c = contacts[r.id]||{};
     return c.poc||c.email||c.phone;
   }).length;
   const prog = document.getElementById('admin-progress');
   if (prog) {
-    const pct = Math.round(filled/RESOURCES.length*100);
+    const pct = Math.round(filledCount/RESOURCES.length*100);
     prog.innerHTML = `
       <div style="flex:1">
-        <div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">${filled} of ${RESOURCES.length} resources have contact info</div>
+        <div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">${filledCount} of ${RESOURCES.length} resources have contact info</div>
         <div style="background:var(--border);border-radius:var(--pill);height:6px;overflow:hidden">
           <div style="background:var(--teal);height:100%;width:${pct}%;border-radius:var(--pill);transition:width .3s"></div>
         </div>
@@ -1128,9 +1128,10 @@ function renderAdminEditor() {
       <div style="font-size:.72rem;color:var(--ink4)">${pct}% complete</div>`;
   }
   const wrap = document.getElementById('admin-editor-body');
+  if (!wrap) return;
   wrap.innerHTML = RESOURCES.map(r => {
     const c = { poc:'', phone:'', email:'', howto:'', ...(contacts[r.id] || {}) };
-    const filled = c.poc || c.email || c.phone;
+    const hasContact = !!(c.poc || c.email || c.phone);
     return `
     <div class="admin-res-card" id="arc-${r.id}">
       <div class="arc-header" onclick="toggleArc('${r.id}')">
@@ -1138,13 +1139,13 @@ function renderAdminEditor() {
           <div style="width:34px;height:34px;background:${r.iconBg};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">${r.icon}</div>
           <div style="min-width:0">
             <div style="font-weight:700;font-size:.88rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}</div>
-            <div style="font-size:.73rem;color:${filled?'var(--green)':'var(--ink4)'}">
-              ${filled ? '✓ ' + (c.poc||c.email) : 'No contact info yet — click to add'}
+            <div style="font-size:.73rem;color:${hasContact?'var(--green)':'var(--ink4)'}">
+              ${hasContact ? '✓ ' + (c.poc||c.email) : 'No contact info yet — click to add'}
             </div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
-          <div class="arc-status ${filled?'filled':''}">${filled?'Set':'Empty'}</div>
+          <div class="arc-status ${hasContact?'filled':''}">\${hasContact?'Set':'Empty'}</div>
           <div class="arc-chev" id="arc-chev-${r.id}">▼</div>
         </div>
       </div>
