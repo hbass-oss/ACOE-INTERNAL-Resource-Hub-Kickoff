@@ -180,7 +180,27 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 /* ── ADMIN DIRECTORY BUTTON ── */
 .admin-btn{background:var(--ink2);color:white;border:none;border-radius:var(--pill);padding:9px 18px;font-family:var(--sans);font-size:.8rem;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2);display:flex;align-items:center;gap:.4rem;transition:background .15s}
 .admin-btn:hover{background:var(--teal2)}
-.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--ink4)}
+/* ── ADMIN RESOURCE EDITOR ── */
+.admin-res-card{background:white;border:1px solid var(--border);border-radius:var(--rlg);overflow:hidden;margin-bottom:.55rem;transition:box-shadow .15s}
+.admin-res-card:hover{box-shadow:var(--sh)}
+.arc-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;cursor:pointer;gap:.5rem}
+.arc-status{font-size:.63rem;font-weight:700;border-radius:var(--pill);padding:2px 9px;background:var(--bg2);color:var(--ink4)}
+.arc-status.filled{background:var(--green-l);color:var(--green)}
+.arc-chev{font-size:.65rem;color:var(--ink4);transition:transform .2s;flex-shrink:0}
+.arc-body{border-top:1px solid var(--border)}
+.arc-fields{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;padding:.9rem 1rem .6rem}
+@media(max-width:560px){.arc-fields{grid-template-columns:1fr}}
+.arc-field{display:flex;flex-direction:column;gap:.22rem}
+.arc-field-full{grid-column:1/-1}
+.arc-field label{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}
+.arc-field input,.arc-field textarea{border:1.5px solid var(--border2);border-radius:8px;padding:.5rem .78rem;font-family:var(--sans);font-size:.85rem;color:var(--ink);outline:none;transition:border-color .15s;width:100%}
+.arc-field input:focus,.arc-field textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(11,118,145,.08)}
+.arc-field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.arc-save{background:var(--teal);color:white;border:none;border-radius:var(--pill);padding:7px 20px;font-family:var(--sans);font-size:.82rem;font-weight:700;cursor:pointer;transition:background .15s}
+.arc-save:hover{background:var(--teal2)}
+.arc-clear{background:transparent;border:1.5px solid var(--border2);color:var(--ink4);border-radius:var(--pill);padding:6px 14px;font-family:var(--sans);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s}
+.arc-clear:hover{border-color:var(--coral);color:var(--coral)}
+/* ── EMPTY / MISC ── */
 .empty-ico{font-size:2rem;margin-bottom:.4rem;opacity:.3}
 .section-note{font-size:.78rem;color:var(--ink4);font-style:italic;margin-top:.5rem;line-height:1.6}
 .nav-btn{background:var(--teal);color:white;border:none;border-radius:var(--pill);padding:10px 26px;font-family:var(--sans);font-size:.9rem;font-weight:700;cursor:pointer;transition:background .15s}
@@ -213,15 +233,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
     <div class="hdr-tagline" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
       <span>Match any student need to the right internal ACOE asset — instantly.</span>
       <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-        <button onclick="openSetupModal()" style="background:rgba(245,187,76,.15);border:1px solid rgba(245,187,76,.3);color:var(--gold-b);border-radius:var(--pill);padding:4px 12px;font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer">🔗 Connect Sheet</button>
-        <button onclick="openAdminDirectory()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8);border-radius:var(--pill);padding:4px 12px;font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer">⚙ Manage Contacts</button>
+                <button onclick="openAdminDirectory()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.8);border-radius:var(--pill);padding:4px 12px;font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer">⚙ Manage Contacts</button>
       </div>
     </div>
   </div>
 </div>
-
-<!-- ── SYNC BANNER ── -->
-<div id="sync-bar" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.55rem 1.5rem;font-size:.78rem;font-weight:500;border-bottom:1px solid transparent;max-width:980px;margin:0 auto;border-radius:0 0 8px 8px;transition:all .2s"></div>
 
 <!-- ── MAIN ── -->
 <div class="wrap">
@@ -246,6 +262,26 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
     <div class="step">
       <div class="step-n todo" id="sn4">4</div>
       <div class="step-label" id="sl4">Connect</div>
+    </div>
+  </div>
+
+  <!-- ════ ADMIN TAB: MANAGE CONTACTS ════ -->
+  <div id="admin-tab" style="display:none">
+    <div class="panel">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem">
+        <div>
+          <h2 style="font-family:var(--serif);font-size:1.4rem;color:var(--ink)">Manage Resource Contacts</h2>
+          <p style="font-size:.83rem;color:var(--ink3);margin-top:.25rem;line-height:1.6">Add a point of contact, phone, email, and referral process for each ACOE resource. Click a resource to expand it. Changes save instantly to this browser.</p>
+        </div>
+        <button class="back-btn" onclick="closeAdminTab()">← Back to App</button>
+      </div>
+      <!-- Progress summary -->
+      <div id="admin-progress" style="background:var(--bg2);border-radius:var(--r);padding:.65rem 1rem;margin-bottom:1rem;font-size:.8rem;color:var(--ink3);display:flex;align-items:center;gap:.75rem;flex-wrap:wrap"></div>
+      <!-- Resource list -->
+      <div id="admin-editor-body"></div>
+      <div style="padding-top:.85rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:.5rem">
+        <button class="back-btn" onclick="closeAdminTab()">← Back to App</button>
+      </div>
     </div>
   </div>
 
@@ -925,9 +961,7 @@ function startOver() {
 //  SHEET CONFIG
 // ═══════════════════════════════════════════
 const CONTACTS_KEY  = 'acoe_contacts_v1';
-const SHEET_URL_KEY = 'acoe_sheet_url_v1';
 
-let SHEET_URL = localStorage.getItem(SHEET_URL_KEY) || '';
 
 // ─── localStorage cache ────────────────────
 function loadContacts() {
@@ -954,170 +988,10 @@ function getContact(id) {
   return { poc:'', phone:'', email:'', howto:'', ...base };
 }
 
-// ═══════════════════════════════════════════
-//  SHEET SYNC — CSV via Publish to Web
-// ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-//  SHEET SYNC — Google Visualization API (JSONP, no CORS)
-// ═══════════════════════════════════════════
-
-// Extract Sheet ID from any Google Sheets URL or raw ID
-function extractSheetId(input) {
-  input = input.trim();
-  // Already a raw ID (no slashes or dots)
-  if (/^[a-zA-Z0-9_-]{20,}$/.test(input)) return input;
-  // Extract from full URL: /spreadsheets/d/ID/
-  const m = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
-  return m ? m[1] : null;
-}
-
-function syncFromSheet() {
-  if (!SHEET_URL) { updateSyncBanner('no-url'); return; }
-  updateSyncBanner('loading');
-  const sheetId = extractSheetId(SHEET_URL);
-  if (!sheetId) { updateSyncBanner('error'); return; }
-
-  // Google Visualization query API — JSONP, works from any domain, no auth needed
-  const cb = '_gviz_' + Date.now();
-  const src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&tq=select%20*&callback=${cb}`;
-
-  let done = false;
-  const cleanup = () => {
-    try { delete window[cb]; } catch(e) {}
-    const el = document.getElementById('_gviz_sc');
-    if (el) el.remove();
-  };
-
-  window[cb] = function(raw) {
-    if (done) return; done = true;
-    cleanup();
-    try {
-      const contacts = parseGviz(raw);
-      if (Object.keys(contacts).length === 0) throw new Error('No matching rows found. Check your Resource IDs in column A.');
-      saveContacts(contacts);
-      applyContacts(contacts);
-      const updated = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-      updateSyncBanner('ok', updated);
-      renderAdminList();
-      if (currentStep === 3) renderResults();
-      toast('✓ Contacts synced from Google Sheet');
-    } catch(err) {
-      console.warn('Gviz parse error:', err);
-      updateSyncBanner('error');
-    }
-  };
-
-  const sc = document.createElement('script');
-  sc.id = '_gviz_sc';
-  sc.src = src;
-  sc.onerror = () => { if (!done) { done=true; cleanup(); updateSyncBanner('error'); } };
-  document.head.appendChild(sc);
-
-  // Timeout fallback
-  setTimeout(() => { if (!done) { done=true; cleanup(); updateSyncBanner('error'); } }, 10000);
-}
-
-// Parse Google Visualization API response into contacts object
-function parseGviz(raw) {
-  // Gviz wraps JSON in a callback: /*O_o*/\ngoogle.visualization.Query.setResponse({…});
-  // We receive it already parsed since it's JSONP — raw is the object directly
-  const rows = (raw && raw.table && raw.table.rows) || [];
-  const contacts = {};
-  rows.forEach(row => {
-    const cells = row.c || [];
-    const get = i => (cells[i] && cells[i].v != null) ? String(cells[i].v).trim() : '';
-    const id = get(0);
-    if (!id || id === 'Resource ID') return; // skip header if included
-    contacts[id] = {
-      poc:   get(2),
-      phone: get(3),
-      email: get(4),
-      howto: get(5),
-    };
-  });
-  return contacts;
-}
-
-// ═══════════════════════════════════════════
-//  SYNC BANNER
-// ═══════════════════════════════════════════
-function updateSyncBanner(state, updated) {
-  const bar = document.getElementById('sync-bar');
-  if (!bar) return;
-  const msgs = {
-    'no-url':  ['⚠️',  'Not connected to Google Sheet. Click <strong>⚙ Connect Sheet</strong> to link your contact data.', '#FEF3D8', '#C8860A'],
-    'loading': ['⏳',  'Syncing contacts from Google Sheet…',                                                                '#D0F4EE', '#0B7691'],
-    'ok':      ['✅',  `Contacts synced from Google Sheet${updated ? ' · Last updated: '+updated : ''}.`,                   '#E4F3EB', '#2D7A4E'],
-    'error':   ['⚠️',  'Could not reach Google Sheet. Showing cached contacts. Check your URL or try again.',               '#FDEEE9', '#C94F2A'],
-  };
-  const [ico, msg, bg, fg] = msgs[state] || msgs['no-url'];
-  bar.style.background = bg;
-  bar.style.borderColor = fg + '40';
-  bar.style.color = fg;
-  bar.innerHTML = `<span>${ico}</span><span style="flex:1">${msg}</span>`
-    + (state !== 'loading' ? `<button onclick="openSetupModal()" style="background:${fg};color:white;border:none;border-radius:var(--pill);padding:4px 12px;font-family:var(--sans);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">⚙ ${SHEET_URL?'Re-connect':'Connect Sheet'}</button>` : '')
-    + (SHEET_URL && state !== 'loading' ? `<button onclick="syncFromSheet()" style="background:transparent;border:1.5px solid ${fg};color:${fg};border-radius:var(--pill);padding:3px 10px;font-family:var(--sans);font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap">↻ Refresh</button>` : '');
-}
 
 // ═══════════════════════════════════════════
 //  SETUP MODAL
 // ═══════════════════════════════════════════
-function openSetupModal() {
-  document.getElementById('setup-url-inp').value = SHEET_URL || '';
-  document.getElementById('setup-modal').classList.add('open');
-}
-function closeSetupModal() {
-  document.getElementById('setup-modal').classList.remove('open');
-}
-async function connectSheet() {
-  const input = document.getElementById('setup-url-inp').value.trim();
-  const id = extractSheetId(input);
-  if (!id) {
-    alert('Could not find a Sheet ID in what you pasted.\n\nPaste either:\n• The full Google Sheets URL from your browser address bar\n• Just the Sheet ID (the long string of letters/numbers in the URL)');
-    return;
-  }
-  SHEET_URL = input;
-  localStorage.setItem(SHEET_URL_KEY, input);
-  closeSetupModal();
-  syncFromSheet();
-}
-
-function testSheetConnection() {
-  const input = document.getElementById('setup-url-inp').value.trim();
-  if (!input) { alert('Paste a Sheet URL or ID first.'); return; }
-  const id = extractSheetId(input);
-  if (!id) { alert('Could not find a Sheet ID in what you pasted.'); return; }
-
-  updateSyncBanner('loading');
-  const cb = '_gviz_test_' + Date.now();
-  const src = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&tq=select%20*&callback=${cb}`;
-  let done = false;
-
-  window[cb] = function(raw) {
-    if (done) return; done = true;
-    try { delete window[cb]; document.getElementById('_gviz_test').remove(); } catch(e) {}
-    const rows = (raw && raw.table && raw.table.rows) || [];
-    alert('✅ Connection works! Found ' + rows.length + ' data row(s) in the sheet.');
-    updateSyncBanner('no-url');
-  };
-
-  const sc = document.createElement('script');
-  sc.id = '_gviz_test';
-  sc.onerror = () => {
-    if (!done) {
-      done = true;
-      try { delete window[cb]; sc.remove(); } catch(e) {}
-      alert('❌ Could not reach the sheet.\n\nMake sure:\n1. The sheet is shared — click Share → change to "Anyone with the link can view"\n2. You pasted the correct URL from your browser address bar');
-      updateSyncBanner('no-url');
-    }
-  };
-  sc.src = src;
-  document.head.appendChild(sc);
-  setTimeout(() => {
-    if (!done) { done=true; try{delete window[cb];sc.remove();}catch(e){} alert('⏱ Timed out. Check your sheet is publicly shared.'); updateSyncBanner('no-url'); }
-  }, 8000);
-}
-
 
 
 // ═══════════════════════════════════════════
@@ -1201,13 +1075,10 @@ function saveContact() {
   closeModal();
   // Re-render if on results step
   if (currentStep === 3) renderResults();
-  renderAdminList();
+  renderAdminEditor();
   toast('Contact saved for ' + (r ? r.name : editingId));
   // Return to admin directory if triggered from there
-  if (_pendingAdminReturn) {
-    _pendingAdminReturn = false;
-    document.getElementById('admin-modal').classList.add('open');
-  }
+  if (_pendingAdminReturn) { _pendingAdminReturn = false; openAdminDirectory(); }
 }
 
 // Close modal on overlay click
@@ -1218,54 +1089,162 @@ document.getElementById('edit-modal').addEventListener('click', function(e) {
 // ═══════════════════════════════════════════
 //  ADMIN DIRECTORY
 // ═══════════════════════════════════════════
-const ADMIN_CODE = 'ACOE2025';
-let adminUnlocked = false;
-
+// ═══════════════════════════════════════════
+//  ADMIN TAB — full inline editor
+// ═══════════════════════════════════════════
 function openAdminDirectory() {
-  if (!adminUnlocked) {
-    const code = prompt('Enter the ACOE staff access code to manage contacts:');
-    if (code === null) return; // cancelled
-    if (code.trim() !== ADMIN_CODE) {
-      alert('Incorrect access code.');
-      return;
-    }
-    adminUnlocked = true;
-  }
-  renderAdminList();
-  document.getElementById('admin-modal').classList.add('open');
+  // Show admin tab as a step overlay
+  document.getElementById('admin-tab').style.display = 'block';
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step3').style.display = 'none';
+  document.getElementById('step4').style.display = 'none';
+  document.getElementById('step-confirm').style.display = 'none';
+  renderAdminEditor();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function renderAdminList() {
-  const list = document.getElementById('admin-resource-list');
-  list.innerHTML = RESOURCES.map(r => {
-    const c = getContact(r.id);
-    const ok = c.poc || c.email || c.phone;
-    return `
-    <div style="display:flex;align-items:center;gap:.75rem;padding:.65rem .75rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;border-radius:6px" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background=''" onclick="openEditModalFromAdmin('${r.id}')">
-      <div style="font-size:1.1rem;width:28px;text-align:center;flex-shrink:0">${r.icon}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.85rem;font-weight:600;color:var(--ink)">${esc(r.name)}</div>
-        ${ok
-          ? `<div style="font-size:.75rem;color:var(--teal)">${esc(c.poc||'')}${c.poc&&c.email?' · ':''}${esc(c.email||'')}</div>`
-          : `<div style="font-size:.75rem;color:var(--ink4);font-style:italic">No contact configured</div>`}
+function closeAdminTab() {
+  document.getElementById('admin-tab').style.display = 'none';
+  goStep(currentStep || 1);
+}
+
+function renderAdminEditor() {
+  const contacts = loadContacts();
+  const filled = RESOURCES.filter(r => {
+    const c = contacts[r.id]||{};
+    return c.poc||c.email||c.phone;
+  }).length;
+  const prog = document.getElementById('admin-progress');
+  if (prog) {
+    const pct = Math.round(filled/RESOURCES.length*100);
+    prog.innerHTML = `
+      <div style="flex:1">
+        <div style="font-weight:600;color:var(--ink);margin-bottom:.3rem">${filled} of ${RESOURCES.length} resources have contact info</div>
+        <div style="background:var(--border);border-radius:var(--pill);height:6px;overflow:hidden">
+          <div style="background:var(--teal);height:100%;width:${pct}%;border-radius:var(--pill);transition:width .3s"></div>
+        </div>
       </div>
-      <div style="font-size:.7rem;padding:2px 8px;border-radius:var(--pill);font-weight:700;${ok?'background:var(--green-l);color:var(--green)':'background:var(--bg2);color:var(--ink4)'}">${ok?'✓ Set':'Needs info'}</div>
-      <div style="font-size:.8rem;color:var(--ink4)">✏️</div>
+      <div style="font-size:.72rem;color:var(--ink4)">${pct}% complete</div>`;
+  }
+  const wrap = document.getElementById('admin-editor-body');
+  wrap.innerHTML = RESOURCES.map(r => {
+    const c = { poc:'', phone:'', email:'', howto:'', ...(contacts[r.id] || {}) };
+    const filled = c.poc || c.email || c.phone;
+    return `
+    <div class="admin-res-card" id="arc-${r.id}">
+      <div class="arc-header" onclick="toggleArc('${r.id}')">
+        <div style="display:flex;align-items:center;gap:.65rem;flex:1;min-width:0">
+          <div style="width:34px;height:34px;background:${r.iconBg};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0">${r.icon}</div>
+          <div style="min-width:0">
+            <div style="font-weight:700;font-size:.88rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}</div>
+            <div style="font-size:.73rem;color:${filled?'var(--green)':'var(--ink4)'}">
+              ${filled ? '✓ ' + (c.poc||c.email) : 'No contact info yet — click to add'}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+          <div class="arc-status ${filled?'filled':''}">${filled?'Set':'Empty'}</div>
+          <div class="arc-chev" id="arc-chev-${r.id}">▼</div>
+        </div>
+      </div>
+      <div class="arc-body" id="arc-body-${r.id}" style="display:none">
+        <div class="arc-fields">
+          <div class="arc-field">
+            <label>Point of Contact Name</label>
+            <input id="acp-${r.id}" value="${esc(c.poc)}" placeholder="e.g. Maria Gonzalez, Literacy Specialist Lead">
+          </div>
+          <div class="arc-field">
+            <label>Phone</label>
+            <input id="acph-${r.id}" value="${esc(c.phone)}" placeholder="e.g. (510) 670-4590 ext. 1234">
+          </div>
+          <div class="arc-field">
+            <label>Email</label>
+            <input type="email" id="acem-${r.id}" value="${esc(c.email)}" placeholder="e.g. mgonzalez@acoe.org">
+          </div>
+          <div class="arc-field arc-field-full">
+            <label>Referral Process — how does a staff member access this resource?</label>
+            <textarea id="acht-${r.id}" placeholder="e.g. Contact your site principal and request a referral. Specialist availability is confirmed within 3 days. No separate form required.">${esc(c.howto)}</textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;padding:0 1rem .85rem;justify-content:flex-end">
+          <button class="arc-clear" onclick="clearResource('${r.id}')">Clear</button>
+          <button class="arc-save" onclick="saveResource('${r.id}')">Save →</button>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
 
-function openEditModalFromAdmin(id) {
-  document.getElementById('admin-modal').classList.remove('open');
-  openEditModal(id, null);
-  // Return to admin after save — patch saveContact to reopen
-  _pendingAdminReturn = true;
+function toggleArc(id) {
+  const body = document.getElementById('arc-body-' + id);
+  const chev = document.getElementById('arc-chev-' + id);
+  const isOpen = body.style.display !== 'none';
+  // Close all first
+  RESOURCES.forEach(r => {
+    const b = document.getElementById('arc-body-' + r.id);
+    const c = document.getElementById('arc-chev-' + r.id);
+    if (b) b.style.display = 'none';
+    if (c) c.style.transform = '';
+  });
+  // Open clicked if it was closed
+  if (!isOpen) {
+    body.style.display = 'block';
+    chev.style.transform = 'rotate(180deg)';
+  }
 }
-let _pendingAdminReturn = false;
 
-document.getElementById('admin-modal').addEventListener('click', function(e) {
-  if (e.target === this) this.classList.remove('open');
-});
+function saveResource(id) {
+  const contacts = loadContacts();
+  contacts[id] = {
+    poc:   (document.getElementById('acp-'+id)||{}).value||'',
+    phone: (document.getElementById('acph-'+id)||{}).value||'',
+    email: (document.getElementById('acem-'+id)||{}).value||'',
+    howto: (document.getElementById('acht-'+id)||{}).value||'',
+  };
+  saveContacts(contacts);
+  const r = RESOURCES.find(x => x.id===id);
+  if (r) Object.assign(r, contacts[id]);
+  renderAdminEditor();
+  // Re-open the card
+  const body = document.getElementById('arc-body-'+id);
+  const chev = document.getElementById('arc-chev-'+id);
+  if (body) { body.style.display='block'; }
+  if (chev) { chev.style.transform='rotate(180deg)'; }
+  toast('Saved: ' + (r?r.name:id));
+}
+
+function clearResource(id) {
+  if (!confirm('Clear all contact info for this resource?')) return;
+  const contacts = loadContacts();
+  contacts[id] = { poc:'', phone:'', email:'', howto:'' };
+  saveContacts(contacts);
+  const r = RESOURCES.find(x => x.id===id);
+  if (r) Object.assign(r, contacts[id]);
+  renderAdminEditor();
+  toast('Cleared: ' + (r?r.name:id));
+}
+
+function saveAllResources() {
+  RESOURCES.forEach(r => {
+    const pocEl  = document.getElementById('acp-'+r.id);
+    if (!pocEl) return; // card not rendered
+    const contacts = loadContacts();
+    contacts[r.id] = {
+      poc:   pocEl.value||'',
+      phone: (document.getElementById('acph-'+r.id)||{}).value||'',
+      email: (document.getElementById('acem-'+r.id)||{}).value||'',
+      howto: (document.getElementById('acht-'+r.id)||{}).value||'',
+    };
+    saveContacts(contacts);
+    Object.assign(r, contacts[r.id]);
+  });
+  renderAdminEditor();
+  toast('All contacts saved');
+}
+
+
+
 
 // ═══════════════════════════════════════════
 //  TOAST
@@ -1351,27 +1330,7 @@ function copyIds() {
 // ─── Init ─────────────────────────────────
 applyStoredContacts();     // paint from cache first (instant)
 buildChips();
-updateSyncBanner(SHEET_URL ? 'loading' : 'no-url');
-if (SHEET_URL) syncFromSheet(); // then refresh from sheet in background
 </script>
-<!-- ── SETUP / CONNECT SHEET MODAL ── -->
-<div class="modal-overlay" id="setup-modal">
-  <div class="modal-box" style="max-width:600px">
-    <h3>Connect Google Sheet</h3>
-    <p class="modal-sub">No scripts or authorization needed. Uses Google Sheets' built-in "Publish to web" feature — takes about 2 minutes.</p>
-
-    <div style="background:var(--bg);border-radius:var(--r);padding:1rem;margin-bottom:.75rem">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.5rem">Step 1 — Create your Sheet</div>
-      <div style="font-size:.82rem;color:var(--ink2);line-height:1.65">Create a Google Sheet with these <strong>6 columns in row 1</strong> as headers:</div>
-      <div style="background:var(--ink2);border-radius:6px;padding:.6rem .85rem;margin:.5rem 0;font-family:var(--mono);font-size:.72rem;color:#7ef8e0;line-height:1.8">
-        A: Resource ID &nbsp;|&nbsp; B: Resource Name &nbsp;|&nbsp; C: Point of Contact<br>
-        D: Phone &nbsp;|&nbsp; E: Email &nbsp;|&nbsp; F: Referral Process
-      </div>
-      <div style="font-size:.8rem;color:var(--ink3);margin-top:.4rem">Then add one row per resource. <strong>Column A must match these exact IDs:</strong></div>
-      <div style="background:var(--ink2);border-radius:6px;padding:.6rem .85rem;margin:.5rem 0;font-family:var(--mono);font-size:.7rem;color:#94A3B8;line-height:1.8;columns:2">literacy-spec · sylvan · pact · social-workers · psych · behaviorist · sped · ptp · infant-fam · career-cm · ed-liaison · ell-support · adult-ed</div>
-      <button onclick="copyIds()" style="background:transparent;border:1px solid var(--border2);color:var(--ink3);border-radius:6px;padding:4px 12px;font-size:.74rem;cursor:pointer;font-family:var(--sans)">📋 Copy IDs</button>
-    </div>
-
     <div style="background:var(--bg);border-radius:var(--r);padding:1rem;margin-bottom:.75rem">
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.5rem">Step 2 — Share the Sheet (view only)</div>
       <div style="font-size:.82rem;color:var(--ink2);line-height:1.75">
@@ -1427,18 +1386,6 @@ if (SHEET_URL) syncFromSheet(); // then refresh from sheet in background
 
 <!-- ── FLOATING SHORTCUT ── -->
 <button class="admin-btn" style="position:fixed;bottom:1.25rem;right:1.25rem;z-index:800" onclick="openAdminDirectory()">⚙ Manage Contacts</button>
-
-<!-- ── ADMIN DIRECTORY MODAL ── -->
-<div class="modal-overlay" id="admin-modal">
-  <div class="modal-box" style="max-width:700px">
-    <h3>Manage Resource Contacts</h3>
-    <p class="modal-sub">Update the point of contact, phone, email, and referral process for each ACOE internal resource. Changes are saved to this browser.</p>
-    <div id="admin-resource-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r);padding:.5rem"></div>
-    <div class="modal-actions">
-      <button class="modal-cancel" onclick="document.getElementById('admin-modal').classList.remove('open')">Close</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
