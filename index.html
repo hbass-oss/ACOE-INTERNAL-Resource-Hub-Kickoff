@@ -957,49 +957,84 @@ function getContact(id) {
 // ═══════════════════════════════════════════
 //  SHEET SYNC — CSV via Publish to Web
 // ═══════════════════════════════════════════
-async function syncFromSheet() {
-  if (!SHEET_URL) { updateSyncBanner('no-url'); return; }
-  updateSyncBanner('loading');
-  // Direct fetch blocked by CORS — route through proxy
-  const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
-  try {
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const csv = await res.text();
-    const contacts = parseCSV(csv);
-    if (Object.keys(contacts).length === 0) throw new Error('No data rows found');
-    saveContacts(contacts);
-    applyContacts(contacts);
-    const updated = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    updateSyncBanner('ok', updated);
-    renderAdminList();
-    if (currentStep === 3) renderResults();
-    toast('✓ Contacts synced from Google Sheet');
-  } catch(err) {
-    console.warn('Sheet sync failed:', err);
-    updateSyncBanner('error');
-  }
+// ═══════════════════════════════════════════
+//  SHEET SYNC — Google Visualization API (JSONP, no CORS)
+// ═══════════════════════════════════════════
+
+// Extract Sheet ID from any Google Sheets URL or raw ID
+function extractSheetId(input) {
+  input = input.trim();
+  // Already a raw ID (no slashes or dots)
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(input)) return input;
+  // Extract from full URL: /spreadsheets/d/ID/
+  const m = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
 }
 
-// Parse CSV into contacts object keyed by Resource ID (column A)
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n').map(l => l.split(',').map(c =>
-    c.trim().replace(/^"|"$/g,'').replace(/""/g,'"')
-  ));
-  if (lines.length < 2) return {};
+function syncFromSheet() {
+  if (!SHEET_URL) { updateSyncBanner('no-url'); return; }
+  updateSyncBanner('loading');
+  const sheetId = extractSheetId(SHEET_URL);
+  if (!sheetId) { updateSyncBanner('error'); return; }
+
+  // Google Visualization query API — JSONP, works from any domain, no auth needed
+  const cb = '_gviz_' + Date.now();
+  const src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&tq=select%20*&callback=${cb}`;
+
+  let done = false;
+  const cleanup = () => {
+    try { delete window[cb]; } catch(e) {}
+    const el = document.getElementById('_gviz_sc');
+    if (el) el.remove();
+  };
+
+  window[cb] = function(raw) {
+    if (done) return; done = true;
+    cleanup();
+    try {
+      const contacts = parseGviz(raw);
+      if (Object.keys(contacts).length === 0) throw new Error('No matching rows found. Check your Resource IDs in column A.');
+      saveContacts(contacts);
+      applyContacts(contacts);
+      const updated = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      updateSyncBanner('ok', updated);
+      renderAdminList();
+      if (currentStep === 3) renderResults();
+      toast('✓ Contacts synced from Google Sheet');
+    } catch(err) {
+      console.warn('Gviz parse error:', err);
+      updateSyncBanner('error');
+    }
+  };
+
+  const sc = document.createElement('script');
+  sc.id = '_gviz_sc';
+  sc.src = src;
+  sc.onerror = () => { if (!done) { done=true; cleanup(); updateSyncBanner('error'); } };
+  document.head.appendChild(sc);
+
+  // Timeout fallback
+  setTimeout(() => { if (!done) { done=true; cleanup(); updateSyncBanner('error'); } }, 10000);
+}
+
+// Parse Google Visualization API response into contacts object
+function parseGviz(raw) {
+  // Gviz wraps JSON in a callback: /*O_o*/\ngoogle.visualization.Query.setResponse({…});
+  // We receive it already parsed since it's JSONP — raw is the object directly
+  const rows = (raw && raw.table && raw.table.rows) || [];
   const contacts = {};
-  // Skip row 0 (headers), read from row 1
-  for (let i = 1; i < lines.length; i++) {
-    const row = lines[i];
-    const id = (row[0] || '').trim();
-    if (!id) continue;
+  rows.forEach(row => {
+    const cells = row.c || [];
+    const get = i => (cells[i] && cells[i].v != null) ? String(cells[i].v).trim() : '';
+    const id = get(0);
+    if (!id || id === 'Resource ID') return; // skip header if included
     contacts[id] = {
-      poc:   (row[2] || '').trim(),
-      phone: (row[3] || '').trim(),
-      email: (row[4] || '').trim(),
-      howto: (row[5] || '').trim(),
+      poc:   get(2),
+      phone: get(3),
+      email: get(4),
+      howto: get(5),
     };
-  }
+  });
   return contacts;
 }
 
@@ -1035,33 +1070,52 @@ function closeSetupModal() {
   document.getElementById('setup-modal').classList.remove('open');
 }
 async function connectSheet() {
-  const url = document.getElementById('setup-url-inp').value.trim();
-  if (!url.includes('docs.google.com/spreadsheets')) {
-    alert('Please paste the Google Sheets "Publish to web" CSV URL.\nIt should look like:\nhttps://docs.google.com/spreadsheets/d/…/export?format=csv&gid=0');
+  const input = document.getElementById('setup-url-inp').value.trim();
+  const id = extractSheetId(input);
+  if (!id) {
+    alert('Could not find a Sheet ID in what you pasted.\n\nPaste either:\n• The full Google Sheets URL from your browser address bar\n• Just the Sheet ID (the long string of letters/numbers in the URL)');
     return;
   }
-  SHEET_URL = url;
-  localStorage.setItem(SHEET_URL_KEY, url);
+  SHEET_URL = input;
+  localStorage.setItem(SHEET_URL_KEY, input);
   closeSetupModal();
-  await syncFromSheet();
+  syncFromSheet();
 }
 
-async function testSheetConnection() {
-  const url = document.getElementById('setup-url-inp').value.trim();
-  if (!url) { alert('Paste a URL first.'); return; }
+function testSheetConnection() {
+  const input = document.getElementById('setup-url-inp').value.trim();
+  if (!input) { alert('Paste a Sheet URL or ID first.'); return; }
+  const id = extractSheetId(input);
+  if (!id) { alert('Could not find a Sheet ID in what you pasted.'); return; }
+
   updateSyncBanner('loading');
-  try {
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    const rows = text.trim().split('\n').length;
-    alert('✅ Connection works! Found ' + rows + ' row(s) in the sheet.');
+  const cb = '_gviz_test_' + Date.now();
+  const src = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&tq=select%20*&callback=${cb}`;
+  let done = false;
+
+  window[cb] = function(raw) {
+    if (done) return; done = true;
+    try { delete window[cb]; document.getElementById('_gviz_test').remove(); } catch(e) {}
+    const rows = (raw && raw.table && raw.table.rows) || [];
+    alert('✅ Connection works! Found ' + rows.length + ' data row(s) in the sheet.');
     updateSyncBanner('no-url');
-  } catch(e) {
-    alert('❌ Could not fetch the sheet.\n\nMake sure:\n1. You used File → Share → Publish to web\n2. You chose CSV format\n3. The sheet is published (not just shared)\n\nError: ' + e.message);
-    updateSyncBanner('no-url');
-  }
+  };
+
+  const sc = document.createElement('script');
+  sc.id = '_gviz_test';
+  sc.onerror = () => {
+    if (!done) {
+      done = true;
+      try { delete window[cb]; sc.remove(); } catch(e) {}
+      alert('❌ Could not reach the sheet.\n\nMake sure:\n1. The sheet is shared — click Share → change to "Anyone with the link can view"\n2. You pasted the correct URL from your browser address bar');
+      updateSyncBanner('no-url');
+    }
+  };
+  sc.src = src;
+  document.head.appendChild(sc);
+  setTimeout(() => {
+    if (!done) { done=true; try{delete window[cb];sc.remove();}catch(e){} alert('⏱ Timed out. Check your sheet is publicly shared.'); updateSyncBanner('no-url'); }
+  }, 8000);
 }
 
 
@@ -1319,25 +1373,21 @@ if (SHEET_URL) syncFromSheet(); // then refresh from sheet in background
     </div>
 
     <div style="background:var(--bg);border-radius:var(--r);padding:1rem;margin-bottom:.75rem">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.5rem">Step 2 — Publish as CSV</div>
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.5rem">Step 2 — Share the Sheet (view only)</div>
       <div style="font-size:.82rem;color:var(--ink2);line-height:1.75">
-        1. <strong>File → Share → Publish to web</strong><br>
-        2. First dropdown: select your <strong>sheet tab name</strong> (e.g. Sheet1)<br>
-        3. Second dropdown: select <strong>Comma-separated values (.csv)</strong><br>
-        4. Click <strong>Publish</strong> → confirm → <strong>copy the URL</strong>
-      </div>
-      <div style="background:#FEF3D8;border:1px solid rgba(200,134,10,.25);border-radius:6px;padding:.5rem .75rem;margin-top:.55rem;font-size:.78rem;color:#7a5200">
-        ⚠️ The URL will look like: <code style="font-family:var(--mono);font-size:.72rem">https://docs.google.com/spreadsheets/d/…/export?format=csv&gid=0</code><br>
-        <span style="margin-top:.25rem;display:block;opacity:.8">The app routes requests through corsproxy.io to work around browser security restrictions on direct Google Sheets access.</span>
+        Click <strong>Share</strong> → <strong>Change to anyone with the link</strong> → make sure it says <strong>"Viewer"</strong> → click Done.<br>
+        <span style="color:var(--green);font-weight:600">That's it — no "Publish to web", no Apps Script, no authorization.</span>
       </div>
     </div>
 
     <div style="background:var(--bg);border-radius:var(--r);padding:1rem;margin-bottom:.75rem">
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.5rem">Step 3 — Paste the URL below</div>
+      <div style="font-size:.82rem;color:var(--ink2);line-height:1.65;margin-bottom:.5rem">Copy the URL from your browser address bar while the sheet is open and paste it here.</div>
       <div style="display:flex;gap:.4rem">
-        <input id="setup-url-inp" type="url" placeholder="https://docs.google.com/spreadsheets/d/…/export?format=csv&gid=0" style="flex:1;border:1.5px solid var(--border2);border-radius:9px;padding:.5rem .85rem;font-family:var(--mono);font-size:.72rem;color:var(--ink);outline:none;transition:border-color .15s">
+        <input id="setup-url-inp" type="url" placeholder="https://docs.google.com/spreadsheets/d/…/edit" style="flex:1;border:1.5px solid var(--border2);border-radius:9px;padding:.5rem .85rem;font-family:var(--mono);font-size:.72rem;color:var(--ink);outline:none;transition:border-color .15s">
         <button onclick="testSheetConnection()" class="modal-cancel" style="white-space:nowrap;flex-shrink:0">Test</button>
       </div>
+      <div style="margin-top:.5rem;font-size:.75rem;color:var(--ink4)">The app reads your sheet using Google's own data API — no scripts or proxies needed.</div>
     </div>
 
     <div class="modal-actions">
